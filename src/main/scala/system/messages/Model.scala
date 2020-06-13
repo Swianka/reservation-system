@@ -4,7 +4,7 @@ import java.util.Date
 
 object Model {
 
-  final case class Query(var peopleNumber: Int, var dateFrom: Date, var dateTo: Date, var priceFrom: Int = 0, var priceTo: Int = Int.MaxValue)
+  final case class Query(var peopleNumber: Int, var dateFrom: Date, var dateTo: Date, var priceFrom: Option[Int], var priceTo: Option[Int])
 
   final case class Room(var roomID: Int, var roomCapacity: Int, var price: Int, var details: String)
 
