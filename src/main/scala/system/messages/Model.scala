@@ -10,6 +10,8 @@ object Model {
 
   final case class Offer(var hotelID: Int, var room: Room, var dateFrom: Date, var dateTo: Date)
 
+  final case class Offers(var offers: List[Offer])
+
   final case class ReservationRequest(var hotelID: Int, var roomID: Int, var dateFrom: Date, var dateTo: Date)
 
   final case class Reservation(var hotelID: Int, var reservationID: Int)

@@ -4,11 +4,13 @@ import akka.actor.typed.ActorRef
 
 object Messages {
 
-  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse])
+  sealed trait ClientCommand
+
+  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand
 
   final case class OfferListResponse(offerList: List[Model.Offer])
 
-  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse])
+  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand
 
   sealed trait ReservationResponse
 
@@ -16,9 +18,9 @@ object Messages {
 
   final case class ReservationFailureResponse(reason: String) extends ReservationResponse
 
-  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse])
+  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) extends ClientCommand
 
-  sealed trait ReservationCancellationResponse
+  sealed trait ReservationCancellationResponse extends ClientCommand
 
   final case class ReservationCancellationSuccessResponse(reservation: Model.Reservation) extends ReservationCancellationResponse
 
