@@ -25,7 +25,7 @@ object ReservationServer extends App {
     val requesterRef = ctx.spawnAnonymous(Requester(accommodationList))
     val clientActorRef = ctx.spawnAnonymous(Client(requesterRef))
 
-    val routes = new Routes(ctx.system, clientActorRef)
+    val routes = new Routes(ctx.system, clientActorRef, accommodationList)
 
     val serverBinding: Future[Http.ServerBinding] = Http()(untypedSystem).bindAndHandle(routes.routes, "localhost", 8080)
     serverBinding.onComplete {

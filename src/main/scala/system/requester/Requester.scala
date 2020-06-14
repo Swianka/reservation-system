@@ -6,7 +6,7 @@ import system.collector.Collector
 import system.messages.{Messages, Model}
 
 object Requester {
-  def apply(accommodationList: List[ActorRef[Messages.AccommodationSearchRequest]]): Behavior[Messages.AccommodationSearchRequest] = {
+  def apply(accommodationList: List[ActorRef[Messages.AccomodationCommand]]): Behavior[Messages.AccommodationSearchRequest] = {
     Behaviors.receive {
       (context, message) => {
         context.log.info("AccommodationSearchRequest in Requester")

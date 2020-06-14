@@ -6,7 +6,9 @@ object Messages {
 
   sealed trait ClientCommand
 
-  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand
+  sealed trait AccomodationCommand
+
+  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends AccomodationCommand with ClientCommand
 
   sealed trait OfferResponse
 
@@ -30,7 +32,7 @@ object Messages {
 
   final case class ReservationCancellationFailureResponse(reason: String) extends ReservationCancellationResponse
 
-  final case class AddRoomRequest(room: Model.Room, replyTo: ActorRef[AddRoomResponse])
+  final case class AddRoomRequest(room: Model.Room, replyTo: ActorRef[AddRoomResponse]) extends AccomodationCommand
 
   sealed trait AddRoomResponse
 

@@ -1,7 +1,9 @@
 package system.network
 
-import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.actor.typed.{ActorRef, ActorSystem, Scheduler}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import system.JsonSupport
 import system.messages.{Messages, Model}
@@ -9,18 +11,19 @@ import system.messages.{Messages, Model}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientCommand]) extends JsonSupport {
+class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientCommand],
+             accommodationList: List[ActorRef[Messages.AccomodationCommand]]) extends JsonSupport {
 
   import akka.actor.typed.scaladsl.AskPattern._
 
-  implicit val scheduler = system.scheduler
+  implicit val scheduler: Scheduler = system.scheduler
 
-  val routes =
+  val routes: Route =
     concat(
       path("search") {
         get {
           entity(as[Model.Query]) { query =>
-            implicit val timeout = Timeout(5.seconds)
+            implicit val timeout: Timeout = Timeout(5.seconds)
             val offers: Future[Messages.OfferListResponse] = clientActor.ask(replyTo => Messages.AccommodationSearchRequest(query, replyTo))
             onSuccess(offers) { offers =>
               complete(offers.offerList)
@@ -31,15 +34,13 @@ class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientComman
       path("reserve") {
         post {
           entity(as[Model.ReservationRequest]) { reserve =>
-            implicit val timeout = Timeout(5.seconds)
+            implicit val timeout: Timeout = Timeout(5.seconds)
             val reservationResponse: Future[Messages.ReservationResponse] = clientActor.ask(replyTo => Messages.ReservationRequest(reserve, replyTo))
-            onSuccess(reservationResponse) { reservationResponse =>
-              reservationResponse match {
-                case Messages.ReservationSuccessResponse(reservation) =>
-                  complete(reservation)
-                case Messages.ReservationFailureResponse(reason) =>
-                  complete(reason)
-              }
+            onSuccess(reservationResponse) {
+              case Messages.ReservationSuccessResponse(reservation) =>
+                complete(reservation)
+              case Messages.ReservationFailureResponse(reason) =>
+                complete(reason)
             }
           }
         }
@@ -47,15 +48,32 @@ class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientComman
       path("cancel") {
         post {
           entity(as[Model.Reservation]) { reservation =>
-            implicit val timeout = Timeout(5.seconds)
+            implicit val timeout: Timeout = Timeout(5.seconds)
             val cancelationResponse: Future[Messages.ReservationCancellationResponse] = clientActor.ask(replyTo => Messages.ReservationCancellationRequest(reservation, replyTo))
-            onSuccess(cancelationResponse) { cancelationResponse =>
-              cancelationResponse match {
-                case Messages.ReservationCancellationSuccessResponse(reservation) =>
-                  complete("Done")
-                case Messages.ReservationCancellationFailureResponse(reason) =>
-                  complete(reason)
-              }
+            onSuccess(cancelationResponse) {
+              case Messages.ReservationCancellationSuccessResponse(reservation) =>
+                complete("Done")
+              case Messages.ReservationCancellationFailureResponse(reason) =>
+                complete(reason)
+            }
+          }
+        }
+      },
+      path("accomodation" / IntNumber / "addroom") { i: Int =>
+        post {
+          entity(as[Model.Room]) { room =>
+            implicit val timeout: Timeout = Timeout(5.seconds)
+            accommodationList.lift(i) match {
+              case Some(accomodationRef) =>
+                val response: Future[Messages.AddRoomResponse] = accomodationRef.ask(replyTo => Messages.AddRoomRequest(room, replyTo))
+                onSuccess(response) {
+                  case Messages.AddRoomSuccessResponse(room) =>
+                    complete(room)
+                  case Messages.AddRoomFailureResponse(reason) =>
+                    complete(reason)
+                }
+              case None =>
+                complete(StatusCodes.NotFound, "Accommodation does not exists")
             }
           }
         }
