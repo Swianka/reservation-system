@@ -7,7 +7,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import system.messages.{Messages, Model}
 
 object Accommodation {
-  def apply(): Behavior[Messages.AccomodationCommand] = {
+  def apply(rooms: Set[Model.Room] = Set.empty): Behavior[Messages.AccomodationCommand] = {
     Behaviors.receive {
       (context, message) => {
         message match {
@@ -18,7 +18,17 @@ object Accommodation {
             replyTo ! Messages.OfferListResponse(list)
             Behaviors.same
           case Messages.AddRoomRequest(room: Model.Room, replyTo: ActorRef[Messages.AddRoomResponse]) =>
-            Behaviors.same
+            context.log.info("AddRoomRequest")
+            rooms.find(_.roomID == room.roomID) match {
+              case Some(_) =>
+                context.log.info("Room with same ID already exists")
+                replyTo ! Messages.AddRoomFailureResponse("Room with same ID already exists")
+                Behaviors.same
+              case None =>
+                context.log.info("Add room to accomodation")
+                replyTo ! Messages.AddRoomSuccessResponse(room)
+                Accommodation(rooms + room)
+            }
           case _ =>
             Behaviors.same
         }
