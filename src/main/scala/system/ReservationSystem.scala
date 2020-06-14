@@ -21,7 +21,7 @@ object ReservationServer extends App {
 
     val accommodationRef = ctx.spawnAnonymous(Accommodation())
     val accommodation2Ref = ctx.spawnAnonymous(Accommodation())
-    val accommodationList =  List(accommodationRef, accommodation2Ref)
+    val accommodationList = List(accommodationRef, accommodation2Ref)
     val requesterRef = ctx.spawnAnonymous(Requester(accommodationList))
     val clientActorRef = ctx.spawnAnonymous(Client(requesterRef))
 
