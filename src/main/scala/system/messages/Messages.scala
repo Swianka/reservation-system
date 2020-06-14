@@ -8,7 +8,11 @@ object Messages {
 
   final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand
 
-  final case class OfferListResponse(offerList: List[Model.Offer])
+  sealed trait OfferResponse
+
+  final case class OfferListResponse(offerList: List[Model.Offer]) extends OfferResponse
+
+  final case class ReceiveTimeout() extends OfferResponse
 
   final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand
 
