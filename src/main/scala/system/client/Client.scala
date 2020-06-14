@@ -5,15 +5,17 @@ import akka.actor.typed.scaladsl.Behaviors
 import system.messages.Messages
 
 object Client {
-  def apply(requesterRef: ActorRef[Messages.AccommodationSearchRequest]): Behavior[Messages.ClientCommand] =
+  def apply(requesterRef: ActorRef[Messages.AccommodationSearchRequest],
+            reserverRef: ActorRef[Messages.ReserverCommand]): Behavior[Messages.ClientCommand] =
     Behaviors.receiveMessage {
       case msg: Messages.AccommodationSearchRequest =>
         requesterRef ! msg
         Behaviors.same
-      case Messages.ReservationRequest(request, replyTo) =>
-        replyTo ! Messages.ReservationFailureResponse("Nope")
+      case msg: Messages.ReservationRequest =>
+        reserverRef ! msg
         Behaviors.same
-      case Messages.ReservationCancellationRequest(reservation, replyTo) =>
+      case msg: Messages.ReservationCancellationRequest =>
+        reserverRef ! msg
         Behaviors.same
     }
 }

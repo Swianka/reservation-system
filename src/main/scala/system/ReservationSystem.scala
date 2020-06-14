@@ -1,14 +1,16 @@
 package system
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.{Done, actor}
 import system.accommodation.Accommodation
 import system.client.Client
+import system.messages.Messages
 import system.network.Routes
 import system.requester.Requester
+import system.reserver.Reserver
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
@@ -23,7 +25,8 @@ object ReservationServer extends App {
     val accommodation2Ref = ctx.spawnAnonymous(Accommodation())
     val accommodationList = List(accommodationRef, accommodation2Ref)
     val requesterRef = ctx.spawnAnonymous(Requester(accommodationList))
-    val clientActorRef = ctx.spawnAnonymous(Client(requesterRef))
+    val reserverRef = ctx.spawnAnonymous(Reserver(accommodationList))
+    val clientActorRef = ctx.spawnAnonymous(Client(requesterRef, reserverRef))
 
     val routes = new Routes(ctx.system, clientActorRef, accommodationList)
 

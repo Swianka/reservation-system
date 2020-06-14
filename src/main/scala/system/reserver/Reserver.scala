@@ -1,39 +1,34 @@
 package system.reserver
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import system.messages.{Messages, Model}
-import system.messages.Messages.{ReservationCancellationResponse, ReservationResponse}
+import akka.actor.typed.{ActorRef, Behavior}
+import system.messages.Messages
 
 object Reserver {
-  def apply(accommodationMap: Map[Int, ActorRef[Messages.AccomodationCommand]]): Behavior[Messages.AccomodationCommand] = {
+  def apply(accommodationsList: List[ActorRef[Messages.AccomodationCommand]]): Behavior[Messages.ReserverCommand] = {
     Behaviors.receive {
       (context, message) => {
         message match {
-          case Messages.ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) =>
-            val accommodation = accommodationMap.getOrElse(0, null)
-            if(accommodation == null) {
-              context.log.info("ReservationRequest in Reserver, bad key")
-              replyTo ! Messages.ReservationFailureResponse("Bad accomodation key")
-              Behaviors.same
+          case msg: Messages.ReservationRequest =>
+            context.log.info("ReservationRequest")
+            accommodationsList.lift(msg.request.hotelID) match {
+              case Some(accommodation) =>
+                accommodation ! msg
+              case None =>
+                context.log.info("ReservationRequest bad accommodation key")
+                msg.replyTo ! Messages.ReservationFailureResponse("Bad accommodation key")
             }
-            else{
-              accommodation ! Messages.ReservationRequest(request, replyTo)
-              Behaviors.same
-            }
+            Behaviors.same
 
-          case Messages.ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) =>
-            val accommodation = accommodationMap.getOrElse(0, null)
-            if(accommodation == null) {
-              context.log.info("ReservationCancellationRequest in Reserver, bad key")
-              replyTo ! Messages.ReservationCancellationFailureResponse("Bad accomodation key")
-              Behaviors.same
+          case msg: Messages.ReservationCancellationRequest =>
+            context.log.info("ReservationCancellationRequest")
+            accommodationsList.lift(msg.reservation.hotelID) match {
+              case Some(accommodation) =>
+                accommodation ! msg
+              case None =>
+                context.log.info("ReservationCancellationRequest bad accommodation key")
+                msg.replyTo ! Messages.ReservationCancellationFailureResponse("Bad accommodation key")
             }
-            else {
-              accommodation ! Messages.ReservationCancellationRequest(reservation, replyTo)
-              Behaviors.same
-            }
-          case _ =>
             Behaviors.same
         }
       }

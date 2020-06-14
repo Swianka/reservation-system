@@ -8,6 +8,8 @@ object Messages {
 
   sealed trait AccomodationCommand
 
+  sealed trait ReserverCommand
+
   final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand with AccomodationCommand
 
   sealed trait OfferResponse
@@ -16,7 +18,7 @@ object Messages {
 
   final case class ReceiveTimeout() extends OfferResponse
 
-  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand with AccomodationCommand
+  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand with AccomodationCommand with ReserverCommand
 
   sealed trait ReservationResponse
 
@@ -24,7 +26,7 @@ object Messages {
 
   final case class ReservationFailureResponse(reason: String) extends ReservationResponse
 
-  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) extends ClientCommand with AccomodationCommand
+  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) extends ClientCommand with AccomodationCommand with ReserverCommand
 
   sealed trait ReservationCancellationResponse extends ClientCommand
 

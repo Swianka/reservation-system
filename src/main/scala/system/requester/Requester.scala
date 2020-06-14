@@ -19,8 +19,6 @@ object Requester {
               ref ! Messages.AccommodationSearchRequest(query, collRef)
             )
             Behaviors.same
-          case _ =>
-            Behaviors.same
         }
       }
     }

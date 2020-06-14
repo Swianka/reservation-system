@@ -54,8 +54,6 @@ object Accommodation {
               replyTo ! Messages.ReservationCancellationFailureResponse("Reservation cannot be cancelled")
             }
             Behaviors.same
-          case _ =>
-            Behaviors.same
         }
       }
     }
