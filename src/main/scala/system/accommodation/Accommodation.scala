@@ -2,8 +2,8 @@ package system.accommodation
 
 import java.util.Date
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, Behavior}
 import system.messages.{Messages, Model}
 
 object Accommodation {

@@ -2,8 +2,10 @@ package system.utils
 
 import java.text._
 import java.util._
-import scala.util.Try
+
 import spray.json._
+
+import scala.util.Try
 
 object DateMarshalling {
   implicit object DateFormat extends JsonFormat[Date] {
