@@ -29,6 +29,31 @@ object Accommodation {
                 replyTo ! Messages.AddRoomSuccessResponse(room)
                 Accommodation(rooms + room)
             }
+          case Messages.ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[Messages.ReservationResponse]) =>
+            val roomAvailable = true
+            if (roomAvailable) {
+              context.log.info("ReservationRequest in Accommodation, room available")
+              //val reservation = Model.Reservation(request.hotelID, request.roomID)
+              val reservation = Model.Reservation(1,1)
+              replyTo ! Messages.ReservationSuccessResponse(reservation)
+            }
+            else {
+              context.log.info("ReservationRequest in Accommodation, room not available")
+              replyTo ! Messages.ReservationFailureResponse("Room not available")
+            }
+            Behaviors.same
+          case Messages.ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[Messages.ReservationCancellationResponse]) =>
+            val cancellationAvailable = true
+            if(cancellationAvailable) {
+              context.log.info("ReservationCancellationRequest in Accommodation, cancellation available")
+              val reservation = Model.Reservation(1, 1)
+              replyTo ! Messages.ReservationCancellationSuccessResponse(reservation)
+            }
+            else {
+              context.log.info("ReservationCancellationRequest in Accommodation, cancellation not available")
+              replyTo ! Messages.ReservationCancellationFailureResponse("Reservation cannot be cancelled")
+            }
+            Behaviors.same
           case _ =>
             Behaviors.same
         }
