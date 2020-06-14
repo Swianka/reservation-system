@@ -1,7 +1,7 @@
-package system.network
+package system.client
 
 import akka.actor.typed.{ActorRef, ActorSystem, Scheduler}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
@@ -11,7 +11,9 @@ import system.messages.{Messages, Model}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientCommand],
+class Routes(system: ActorSystem[_],
+             requesterRef: ActorRef[Messages.AccommodationSearchRequest],
+             reserverRef: ActorRef[Messages.ReserverCommand],
              accommodationList: List[ActorRef[Messages.AccomodationCommand]]) extends JsonSupport {
 
   import akka.actor.typed.scaladsl.AskPattern._
@@ -24,7 +26,7 @@ class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientComman
         get {
           entity(as[Model.Query]) { query =>
             implicit val timeout: Timeout = Timeout(5.seconds)
-            val offers: Future[Messages.OfferListResponse] = clientActor.ask(replyTo => Messages.AccommodationSearchRequest(query, replyTo))
+            val offers: Future[Messages.OfferListResponse] = requesterRef.ask(replyTo => Messages.AccommodationSearchRequest(query, replyTo))
             onSuccess(offers) { offers =>
               complete(offers.offerList)
             }
@@ -35,7 +37,7 @@ class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientComman
         post {
           entity(as[Model.ReservationRequest]) { reserve =>
             implicit val timeout: Timeout = Timeout(5.seconds)
-            val reservationResponse: Future[Messages.ReservationResponse] = clientActor.ask(replyTo => Messages.ReservationRequest(reserve, replyTo))
+            val reservationResponse: Future[Messages.ReservationResponse] = reserverRef.ask(replyTo => Messages.ReservationRequest(reserve, replyTo))
             onSuccess(reservationResponse) {
               case Messages.ReservationSuccessResponse(reservation) =>
                 complete(reservation)
@@ -49,7 +51,7 @@ class Routes(system: ActorSystem[_], clientActor: ActorRef[Messages.ClientComman
         post {
           entity(as[Model.Reservation]) { reservation =>
             implicit val timeout: Timeout = Timeout(5.seconds)
-            val cancelationResponse: Future[Messages.ReservationCancellationResponse] = clientActor.ask(replyTo => Messages.ReservationCancellationRequest(reservation, replyTo))
+            val cancelationResponse: Future[Messages.ReservationCancellationResponse] = reserverRef.ask(replyTo => Messages.ReservationCancellationRequest(reservation, replyTo))
             onSuccess(cancelationResponse) {
               case Messages.ReservationCancellationSuccessResponse(reservation) =>
                 complete("Done")
