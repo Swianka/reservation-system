@@ -15,19 +15,53 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 object ReservationServer extends App {
+  val usage =
+    """
+    Usage: [--accom number] [--accom-no-answer number]
+  """
+  type OptionMap = Map[String, Int]
+
+  @scala.annotation.tailrec
+  def nextOption(map: OptionMap, list: List[String]): OptionMap = {
+    list match {
+      case Nil => map
+      case "--accom" :: value :: tail =>
+        nextOption(map ++ Map("accom" -> value.toInt), tail)
+      case "--accom-no-answer" :: value :: tail =>
+        nextOption(map ++ Map("accom-no-answer" -> value.toInt), tail)
+      case option :: tail =>
+        println("Unknown option " + option)
+        print(usage)
+        sys.exit(1)
+    }
+  }
+
+  val arglist = args.toList
+  val options = nextOption(Map(), arglist)
+  val numberOfAccommodations: Int = options.get("accom") match {
+    case Some(i) => i
+    case _ => 2
+  }
+  val numberOfAccommodationsNoAnswer: Int = options.get("accom-no-answer") match {
+    case Some(i) => i
+    case _ => 0
+  }
+
   val system = ActorSystem[Done](Behaviors.setup { ctx =>
     implicit val untypedSystem: actor.ActorSystem = ctx.system.classicSystem
     implicit val materializer: ActorMaterializer = ActorMaterializer()(ctx.system.classicSystem)
     implicit val ec: ExecutionContextExecutor = ctx.system.executionContext
-    val numberOfAccommodations = 2
 
     var accommodationsMap: Map[Int, ActorRef[Messages.AccommodationCommand]] = Map.empty
 
-    for (i <- 0 until numberOfAccommodations) {
+    for (i <- 0 until numberOfAccommodationsNoAnswer) {
+      val accommodationRef = ctx.spawnAnonymous(Accommodation(i, answer = false))
+      accommodationsMap += (i -> accommodationRef)
+    }
+    for (i <- numberOfAccommodationsNoAnswer until numberOfAccommodations) {
       val accommodationRef = ctx.spawnAnonymous(Accommodation(i))
       accommodationsMap += (i -> accommodationRef)
     }
-
     val accommodationsList = accommodationsMap.values.toList
     val requesterRef = ctx.spawnAnonymous(Requester(accommodationsList))
     val reserverRef = ctx.spawnAnonymous(Reserver(accommodationsMap))

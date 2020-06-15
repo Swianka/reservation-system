@@ -12,7 +12,7 @@ object Collector {
            ): Behavior[Messages.OfferResponse] = {
 
     Behaviors.setup { context =>
-      context.setReceiveTimeout(5.second, Messages.ReceiveTimeout())
+      context.setReceiveTimeout(3.second, Messages.ReceiveTimeout())
 
       def collecting(replies: List[Model.Offer], numberOfReplies: Int): Behavior[Messages.OfferResponse] = {
         Behaviors.receiveMessage {
@@ -34,6 +34,5 @@ object Collector {
 
       collecting(List[Model.Offer](), 0)
     }
-
   }
 }
