@@ -1,0 +1,15 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 20
+      arrivalRate: 10
+scenarios:
+  - flow:
+    - loop:
+        - get:
+            url: "/search"
+            json:
+              peopleNumber: 2
+              dateFrom: "2020-07-02"
+              dateTo: "2020-07-08"
+      count: 100
