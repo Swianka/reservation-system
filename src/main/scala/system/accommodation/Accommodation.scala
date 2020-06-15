@@ -87,15 +87,21 @@ object Accommodation {
 
           case Messages.ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[Messages.ReservationCancellationResponse]) =>
             context.log.info("Accommodation" + hotelID + ": ReservationCancellationRequest")
-            //val today = new Date(2020, 4, 4)
             val today = Calendar.getInstance().getTime()
             val x = reservations.filter(_.reservationID == reservation.reservationID)
-              .filter(_.dateFrom.compareTo(today) > 0)
             if (x.nonEmpty) {
-              val reservationInfo = x.head
-              context.log.info("Accommodation" + hotelID + ": cancellation available")
-              replyTo ! Messages.ReservationCancellationSuccessResponse(reservation)
-              Accommodation(hotelID, rooms, reservations - reservationInfo, nextReservationID)
+              val matching = x.filter(_.dateFrom.compareTo(today) > 0)
+              if (matching.nonEmpty) {
+                val reservationInfo = matching.head
+                context.log.info("Accommodation" + hotelID + ": cancellation available")
+                replyTo ! Messages.ReservationCancellationSuccessResponse(reservation)
+                Accommodation(hotelID, rooms, reservations - reservationInfo, nextReservationID)
+              }
+              else {
+                context.log.info("Accommodation" + hotelID + ": cannot cancel reservation from past")
+                replyTo ! Messages.ReservationCancellationFailureResponse("Cannot cancel reservation from past")
+                Behaviors.same
+              }
             }
             else {
               context.log.info("Accommodation" + hotelID + ": reservation doesnt exist")
