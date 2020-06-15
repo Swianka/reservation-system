@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 class Routes(system: ActorSystem[_],
              requesterRef: ActorRef[Messages.AccommodationSearchRequest],
              reserverRef: ActorRef[Messages.ReserverCommand],
-             accommodationList: List[ActorRef[Messages.AccomodationCommand]]) extends JsonSupport {
+             accommodationsMap: Map[Int, ActorRef[Messages.AccommodationCommand]]) extends JsonSupport {
 
   import akka.actor.typed.scaladsl.AskPattern._
 
@@ -51,8 +51,8 @@ class Routes(system: ActorSystem[_],
         post {
           entity(as[Model.Reservation]) { reservation =>
             implicit val timeout: Timeout = Timeout(5.seconds)
-            val cancelationResponse: Future[Messages.ReservationCancellationResponse] = reserverRef.ask(replyTo => Messages.ReservationCancellationRequest(reservation, replyTo))
-            onSuccess(cancelationResponse) {
+            val cancellationResponse: Future[Messages.ReservationCancellationResponse] = reserverRef.ask(replyTo => Messages.ReservationCancellationRequest(reservation, replyTo))
+            onSuccess(cancellationResponse) {
               case Messages.ReservationCancellationSuccessResponse(reservation) =>
                 complete("Done")
               case Messages.ReservationCancellationFailureResponse(reason) =>
@@ -61,13 +61,13 @@ class Routes(system: ActorSystem[_],
           }
         }
       },
-      path("accomodation" / IntNumber / "addroom") { i: Int =>
+      path("accommodation" / IntNumber / "addroom") { i: Int =>
         post {
           entity(as[Model.Room]) { room =>
             implicit val timeout: Timeout = Timeout(5.seconds)
-            accommodationList.lift(i) match {
-              case Some(accomodationRef) =>
-                val response: Future[Messages.AddRoomResponse] = accomodationRef.ask(replyTo => Messages.AddRoomRequest(room, replyTo))
+            accommodationsMap.get(i) match {
+              case Some(accommodationRef) =>
+                val response: Future[Messages.AddRoomResponse] = accommodationRef.ask(replyTo => Messages.AddRoomRequest(room, replyTo))
                 onSuccess(response) {
                   case Messages.AddRoomSuccessResponse(room) =>
                     complete(room)

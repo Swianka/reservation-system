@@ -1,59 +1,102 @@
 package system.accommodation
 
-import java.util.Date
-
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import system.messages.Model.Offer
 import system.messages.{Messages, Model}
 
 object Accommodation {
-  def apply(rooms: Set[Model.Room] = Set.empty): Behavior[Messages.AccomodationCommand] = {
+  def apply(hotelID: Int,
+            rooms: Set[Model.Room] = Set.empty,
+            reservations: Set[Model.ReservationInfo] = Set.empty,
+            nextReservationID: Int = 0
+           ): Behavior[Messages.AccommodationCommand] = {
+
     Behaviors.receive {
       (context, message) => {
         message match {
+
           case Messages.AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[Messages.OfferListResponse]) =>
-            context.log.info("AccommodationSearchRequest in Accommodation")
-            val offer = Model.Offer(1, Model.Room(1, 1, 1, ""), new Date(), new Date())
-            val list = List(offer)
-            replyTo ! Messages.OfferListResponse(list)
+            context.log.info("Accommodation" + hotelID + ": AccommodationSearchRequest")
+
+            def comparePrices(room: Model.Room): Boolean = (query.priceFrom, query.priceTo) match {
+              case (Some(priceFrom), Some(priceTo)) =>
+                room.price >= priceFrom && room.price <= priceTo
+              case (None, Some(priceTo)) =>
+                room.price <= priceTo
+              case (Some(priceFrom), None) =>
+                room.price >= priceFrom
+              case (None, None) =>
+                true
+            }
+
+            def isAvailable(room: Model.Room): Boolean = {
+              reservations
+                .filter(_.roomID == room.roomID)
+                .filterNot(_.dateTo.compareTo(query.dateFrom) <= 0)
+                .filterNot(_.dateFrom.compareTo(query.dateTo) >= 0)
+                .isEmpty
+            }
+
+            val offers = rooms
+              .filter(_.roomCapacity >= query.peopleNumber)
+              .filter(comparePrices)
+              .filter(isAvailable)
+              .map(Offer(hotelID, _, query.dateFrom, query.dateTo))
+              .toList
+            replyTo ! Messages.OfferListResponse(offers)
             Behaviors.same
+
           case Messages.AddRoomRequest(room: Model.Room, replyTo: ActorRef[Messages.AddRoomResponse]) =>
-            context.log.info("AddRoomRequest")
+            context.log.info("Accommodation" + hotelID + ": AddRoomRequest")
             rooms.find(_.roomID == room.roomID) match {
               case Some(_) =>
-                context.log.info("Room with same ID already exists")
+                context.log.info("Accommodation" + hotelID + ": Room with same ID already exists")
                 replyTo ! Messages.AddRoomFailureResponse("Room with same ID already exists")
                 Behaviors.same
               case None =>
-                context.log.info("Add room to accomodation")
+                context.log.info("Accommodation" + hotelID + ": Add room to accommodation")
                 replyTo ! Messages.AddRoomSuccessResponse(room)
-                Accommodation(rooms + room)
+                Accommodation(hotelID, rooms + room, reservations, nextReservationID)
             }
+
           case Messages.ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[Messages.ReservationResponse]) =>
-            val roomAvailable = true
-            if (roomAvailable) {
-              context.log.info("ReservationRequest in Accommodation, room available")
-              //val reservation = Model.Reservation(request.hotelID, request.roomID)
-              val reservation = Model.Reservation(1,1)
+            def isAvailable(roomID: Int): Boolean = {
+              reservations
+                .filter(_.roomID == roomID)
+                .filterNot(_.dateTo.compareTo(request.dateFrom) <= 0)
+                .filterNot(_.dateFrom.compareTo(request.dateTo) >= 0)
+                .isEmpty
+            }
+
+            context.log.info("Accommodation" + hotelID + ": ReservationRequest")
+            if (isAvailable(request.roomID)) {
+              val reservationInfo = Model.ReservationInfo(nextReservationID, request.roomID, request.dateFrom, request.dateTo)
+              val reservation = Model.Reservation(hotelID, nextReservationID)
               replyTo ! Messages.ReservationSuccessResponse(reservation)
+              context.log.info("Accommodation" + hotelID + ": room available, add reservation")
+              Accommodation(hotelID, rooms, reservations + reservationInfo, nextReservationID + 1)
             }
             else {
-              context.log.info("ReservationRequest in Accommodation, room not available")
+              context.log.info("Accommodation" + hotelID + ": room not available")
               replyTo ! Messages.ReservationFailureResponse("Room not available")
+              Behaviors.same
             }
-            Behaviors.same
+
           case Messages.ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[Messages.ReservationCancellationResponse]) =>
-            val cancellationAvailable = true
-            if(cancellationAvailable) {
-              context.log.info("ReservationCancellationRequest in Accommodation, cancellation available")
-              val reservation = Model.Reservation(1, 1)
+            context.log.info("Accommodation" + hotelID + ": ReservationCancellationRequest")
+            val x = reservations.filter(_.reservationID == reservation.reservationID)
+            if (x.nonEmpty) {
+              val reservationInfo = x.head
+              context.log.info("Accommodation" + hotelID + ": cancellation available")
               replyTo ! Messages.ReservationCancellationSuccessResponse(reservation)
+              Accommodation(hotelID, rooms, reservations - reservationInfo, nextReservationID)
             }
             else {
-              context.log.info("ReservationCancellationRequest in Accommodation, cancellation not available")
-              replyTo ! Messages.ReservationCancellationFailureResponse("Reservation cannot be cancelled")
+              context.log.info("Accommodation" + hotelID + ": reservation doesnt exist")
+              replyTo ! Messages.ReservationCancellationFailureResponse("Reservation doesnt exist")
+              Behaviors.same
             }
-            Behaviors.same
         }
       }
     }

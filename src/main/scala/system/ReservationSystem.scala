@@ -19,14 +19,20 @@ object ReservationServer extends App {
     implicit val untypedSystem: actor.ActorSystem = ctx.system.classicSystem
     implicit val materializer: ActorMaterializer = ActorMaterializer()(ctx.system.classicSystem)
     implicit val ec: ExecutionContextExecutor = ctx.system.executionContext
+    val numberOfAccommodations = 2
 
-    val accommodationRef = ctx.spawnAnonymous(Accommodation())
-    val accommodation2Ref = ctx.spawnAnonymous(Accommodation())
-    val accommodationList = List(accommodationRef, accommodation2Ref)
-    val requesterRef = ctx.spawnAnonymous(Requester(accommodationList))
-    val reserverRef = ctx.spawnAnonymous(Reserver(accommodationList))
+    var accommodationsMap: Map[Int, ActorRef[Messages.AccommodationCommand]] = Map.empty
 
-    val routes = new Routes(ctx.system, requesterRef, reserverRef, accommodationList)
+    for (i <- 0 until numberOfAccommodations) {
+      val accommodationRef = ctx.spawnAnonymous(Accommodation(i))
+      accommodationsMap += (i -> accommodationRef)
+    }
+
+    val accommodationsList = accommodationsMap.values.toList
+    val requesterRef = ctx.spawnAnonymous(Requester(accommodationsList))
+    val reserverRef = ctx.spawnAnonymous(Reserver(accommodationsMap))
+
+    val routes = new Routes(ctx.system, requesterRef, reserverRef, accommodationsMap)
 
     val serverBinding: Future[Http.ServerBinding] = Http()(untypedSystem).bindAndHandle(routes.routes, "localhost", 8080)
     serverBinding.onComplete {

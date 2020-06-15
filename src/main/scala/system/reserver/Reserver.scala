@@ -5,13 +5,13 @@ import akka.actor.typed.{ActorRef, Behavior}
 import system.messages.Messages
 
 object Reserver {
-  def apply(accommodationsList: List[ActorRef[Messages.AccomodationCommand]]): Behavior[Messages.ReserverCommand] = {
+  def apply(accommodationsMap: Map[Int, ActorRef[Messages.AccommodationCommand]]): Behavior[Messages.ReserverCommand] = {
     Behaviors.receive {
       (context, message) => {
         message match {
           case msg: Messages.ReservationRequest =>
             context.log.info("ReservationRequest")
-            accommodationsList.lift(msg.request.hotelID) match {
+            accommodationsMap.get(msg.request.hotelID) match {
               case Some(accommodation) =>
                 accommodation ! msg
               case None =>
@@ -22,7 +22,7 @@ object Reserver {
 
           case msg: Messages.ReservationCancellationRequest =>
             context.log.info("ReservationCancellationRequest")
-            accommodationsList.lift(msg.reservation.hotelID) match {
+            accommodationsMap.get(msg.reservation.hotelID) match {
               case Some(accommodation) =>
                 accommodation ! msg
               case None =>

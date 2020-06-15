@@ -6,11 +6,11 @@ object Messages {
 
   sealed trait ClientCommand
 
-  sealed trait AccomodationCommand
+  sealed trait AccommodationCommand
 
   sealed trait ReserverCommand
 
-  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand with AccomodationCommand
+  final case class AccommodationSearchRequest(query: Model.Query, replyTo: ActorRef[OfferListResponse]) extends ClientCommand with AccommodationCommand
 
   sealed trait OfferResponse
 
@@ -18,7 +18,7 @@ object Messages {
 
   final case class ReceiveTimeout() extends OfferResponse
 
-  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand with AccomodationCommand with ReserverCommand
+  final case class ReservationRequest(request: Model.ReservationRequest, replyTo: ActorRef[ReservationResponse]) extends ClientCommand with AccommodationCommand with ReserverCommand
 
   sealed trait ReservationResponse
 
@@ -26,7 +26,7 @@ object Messages {
 
   final case class ReservationFailureResponse(reason: String) extends ReservationResponse
 
-  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) extends ClientCommand with AccomodationCommand with ReserverCommand
+  final case class ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[ReservationCancellationResponse]) extends ClientCommand with AccommodationCommand with ReserverCommand
 
   sealed trait ReservationCancellationResponse extends ClientCommand
 
@@ -34,7 +34,7 @@ object Messages {
 
   final case class ReservationCancellationFailureResponse(reason: String) extends ReservationCancellationResponse
 
-  final case class AddRoomRequest(room: Model.Room, replyTo: ActorRef[AddRoomResponse]) extends AccomodationCommand
+  final case class AddRoomRequest(room: Model.Room, replyTo: ActorRef[AddRoomResponse]) extends AccommodationCommand
 
   sealed trait AddRoomResponse
 

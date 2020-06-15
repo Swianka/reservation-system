@@ -16,4 +16,6 @@ object Model {
 
   final case class Reservation(var hotelID: Int, var reservationID: Int)
 
+  final case class ReservationInfo(var reservationID: Int, var roomID: Int, var dateFrom: Date, var dateTo: Date)
+
 }
