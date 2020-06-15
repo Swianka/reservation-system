@@ -1,5 +1,7 @@
 package system.accommodation
 
+import java.util.{Calendar, Date}
+
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import system.messages.Model.Offer
@@ -85,7 +87,10 @@ object Accommodation {
 
           case Messages.ReservationCancellationRequest(reservation: Model.Reservation, replyTo: ActorRef[Messages.ReservationCancellationResponse]) =>
             context.log.info("Accommodation" + hotelID + ": ReservationCancellationRequest")
+            //val today = new Date(2020, 4, 4)
+            val today = Calendar.getInstance().getTime()
             val x = reservations.filter(_.reservationID == reservation.reservationID)
+              .filter(_.dateFrom.compareTo(today) > 0)
             if (x.nonEmpty) {
               val reservationInfo = x.head
               context.log.info("Accommodation" + hotelID + ": cancellation available")
