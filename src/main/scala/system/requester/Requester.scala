@@ -1,7 +1,7 @@
 package system.requester
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, Behavior}
 import system.collector.Collector
 import system.messages.{Messages, Model}
 

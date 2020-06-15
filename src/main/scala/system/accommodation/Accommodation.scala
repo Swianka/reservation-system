@@ -2,9 +2,9 @@ package system.accommodation
 
 import java.util.{Calendar, Date}
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import system.messages.Model.Offer
+import akka.actor.typed.{ActorRef, Behavior}
 import system.messages.{Messages, Model}
 
 object Accommodation {
